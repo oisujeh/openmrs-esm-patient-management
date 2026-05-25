@@ -59,6 +59,7 @@ export interface RegistrationConfig {
         useQuickSearch: boolean;
         searchAddressByLevel: boolean;
       };
+      requiredAddressFields: Array<string>;
     };
     dateOfBirth: {
       allowEstimatedDateOfBirth: boolean;
@@ -80,6 +81,10 @@ export interface RegistrationConfig {
     submitButton: string;
   };
   defaultPatientIdentifierTypes: Array<string>;
+  identifierTypeOverrides: Array<{
+    identifierTypeUuid: string;
+    required?: boolean;
+  }>;
   registrationObs: {
     encounterTypeUuid: string | null;
     encounterProviderRoleUuid: string;
@@ -332,6 +337,15 @@ export const esmPatientRegistrationSchema = {
             "Whether to fill the addresses by levels, i.e. County => subCounty, the current field is dependent on it's previous field.",
         },
       },
+      requiredAddressFields: {
+        _type: Type.Array,
+        _default: [],
+        _description:
+          'An array of address field names that should be required in the registration form. This overrides the backend address template configuration. Common field names include: country, stateProvince, countyDistrict, cityVillage, address1, address2, postalCode, etc.',
+        _elements: {
+          _type: Type.String,
+        },
+      },
     },
     dateOfBirth: {
       allowEstimatedDateOfBirth: {
@@ -389,8 +403,28 @@ export const esmPatientRegistrationSchema = {
   defaultPatientIdentifierTypes: {
     _type: Type.Array,
     _default: [],
+    _description:
+      'A list of patient identifier type UUIDs to be displayed by default in the registration form. These identifiers will be shown in addition to any identifiers marked as required or primary in the backend.',
     _elements: {
       _type: Type.PatientIdentifierTypeUuid,
+    },
+  },
+  identifierTypeOverrides: {
+    _type: Type.Array,
+    _default: [],
+    _description:
+      'Allows overriding the required/optional status of specific identifier types. Use this to make backend-required identifiers optional in the frontend.',
+    _elements: {
+      identifierTypeUuid: {
+        _type: Type.UUID,
+        _description: 'The UUID of the patient identifier type to override.',
+      },
+      required: {
+        _type: Type.Boolean,
+        _default: false,
+        _description:
+          'Whether this identifier should be required. Set to false to make a backend-required identifier optional in the frontend.',
+      },
     },
   },
   registrationObs: {

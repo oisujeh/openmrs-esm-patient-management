@@ -26,6 +26,7 @@ export const AddressComponent: React.FC = () => {
     fieldConfigurations: {
       address: {
         useAddressHierarchy: { enabled: addressHierarchyEnabled, useQuickSearch, searchAddressByLevel },
+        requiredAddressFields,
       },
     },
   } = config;
@@ -38,7 +39,10 @@ export const AddressComponent: React.FC = () => {
 
     const allFields = addressTemplate?.lines?.flat();
     const fields = allFields?.filter(({ isToken }) => isToken === 'IS_ADDR_TOKEN');
-    const allRequiredFields = Object.fromEntries(addressTemplate?.requiredElements?.map((curr) => [curr, curr]) || []);
+    const allRequiredFields = requiredAddressFields?.length
+      ? Object.fromEntries(requiredAddressFields.map((field) => [field, field]))
+      : Object.fromEntries(addressTemplate?.requiredElements?.map((curr) => [curr, curr]) || []);
+
     return fields.map(({ displayText, codeName }) => {
       return {
         id: codeName,
@@ -47,7 +51,7 @@ export const AddressComponent: React.FC = () => {
         required: Boolean(allRequiredFields[codeName]),
       };
     });
-  }, [addressTemplate]);
+  }, [addressTemplate, requiredAddressFields]);
 
   const [selected, setSelected] = useState('');
 

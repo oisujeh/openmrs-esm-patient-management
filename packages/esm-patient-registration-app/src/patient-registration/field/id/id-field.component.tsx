@@ -38,13 +38,22 @@ export function setIdentifierSource(
   };
 }
 
-export function initializeIdentifier(identifierType: PatientIdentifierType, identifierProps): PatientIdentifierValue {
+export function initializeIdentifier(
+  identifierType: PatientIdentifierType,
+  identifierProps,
+  identifierTypeOverrides?: Array<{ identifierTypeUuid: string; required?: boolean }>,
+): PatientIdentifierValue {
+  // Check if there's an override for this identifier type
+  const override = identifierTypeOverrides?.find((override) => override.identifierTypeUuid === identifierType.uuid);
+  const isRequired =
+    override?.required !== undefined ? override.required : identifierType.isPrimary || identifierType.required;
+
   return {
     identifierTypeUuid: identifierType.uuid,
     identifierName: identifierType.name,
     preferred: identifierType.isPrimary,
     initialValue: '',
-    required: identifierType.isPrimary || identifierType.required,
+    required: isRequired,
     ...identifierProps,
     ...setIdentifierSource(
       identifierProps?.selectedSource ?? identifierType.identifierSources?.[0],
@@ -63,10 +72,8 @@ export const Identifiers: React.FC = () => {
   const isLoading = !identifierTypes?.length;
   const { values, setFieldValue, initialFormValues, isOffline } = usePatientRegistrationContext();
   const { t } = useTranslation();
-  const layout = useLayoutType();
-  const [showIdentifierOverlay, setShowIdentifierOverlay] = useState(false);
   const config = useConfig();
-  const { defaultPatientIdentifierTypes } = config;
+  const { defaultPatientIdentifierTypes, identifierTypeOverrides } = config;
 
   useEffect(() => {
     if (identifierTypes) {
@@ -85,6 +92,7 @@ export const Identifiers: React.FC = () => {
           identifiers[type.fieldName] = initializeIdentifier(
             type,
             values.identifiers[type.uuid] ?? initialFormValues.identifiers[type.uuid] ?? {},
+            identifierTypeOverrides,
           );
         });
       /*
@@ -100,12 +108,14 @@ export const Identifiers: React.FC = () => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [identifierTypes, setFieldValue, defaultPatientIdentifierTypes, values.identifiers, initializeIdentifier]);
-
-  const closeIdentifierSelectionOverlay = useCallback(
-    () => setShowIdentifierOverlay(false),
-    [setShowIdentifierOverlay],
-  );
+  }, [
+    identifierTypes,
+    setFieldValue,
+    defaultPatientIdentifierTypes,
+    identifierTypeOverrides,
+    values.identifiers,
+    initializeIdentifier,
+  ]);
 
   if (isLoading && !isOffline) {
     return (
@@ -113,34 +123,23 @@ export const Identifiers: React.FC = () => {
         <div className={styles.identifierLabelText}>
           <h4 className={styles.productiveHeading02Light}>{t('idFieldLabelText', 'Identifiers')}</h4>
         </div>
-        <div role="progressbar" aria-label={t('loading', 'Loading')}>
-          <SkeletonText />
-        </div>
+        <SkeletonText
+          // @ts-expect-error
+          role="progressbar"
+        />
       </div>
     );
   }
 
   return (
     <div className={styles.halfWidthInDesktopView}>
-      <UserHasAccess privilege={['Get Identifier Types', 'Add Patient Identifiers']}>
-        <div className={styles.identifierLabelText}>
-          <h4 className={styles.productiveHeading02Light}>{t('idFieldLabelText', 'Identifiers')}</h4>
-          <Button
-            kind="ghost"
-            className={styles.configureIdentifiersButton}
-            onClick={() => setShowIdentifierOverlay(true)}
-            size={isDesktop(layout) ? 'sm' : 'md'}>
-            {t('configure', 'Configure')} <ArrowRight className={styles.arrowRightIcon} size={16} />
-          </Button>
-        </div>
-      </UserHasAccess>
+      <div className={styles.identifierLabelText}>
+        <h4 className={styles.productiveHeading02Light}>{t('idFieldLabelText', 'Identifiers')}</h4>
+      </div>
       <div>
         {Object.entries(values.identifiers).map(([fieldName, identifier]) => (
           <IdentifierInput key={fieldName} fieldName={fieldName} patientIdentifier={identifier} />
         ))}
-        {showIdentifierOverlay && (
-          <IdentifierSelectionOverlay setFieldValue={setFieldValue} closeOverlay={closeIdentifierSelectionOverlay} />
-        )}
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
   const [unsavedIdentifierTypes, setUnsavedIdentifierTypes] = useState<FormValues['identifiers']>(values.identifiers);
   const [searchString, setSearchString] = useState('');
   const { t } = useTranslation();
-  const { defaultPatientIdentifierTypes } = useConfig();
+  const { defaultPatientIdentifierTypes, identifierTypeOverrides } = useConfig();
 
   const defaultPatientIdentifierTypesMap = useMemo(() => {
     const map = {};
@@ -57,6 +57,7 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
               values.identifiers[identifierType.fieldName] ??
                 initialFormValues.identifiers[identifierType.fieldName] ??
                 {},
+              identifierTypeOverrides,
             ),
           };
         }
@@ -67,7 +68,7 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
         }
         return unsavedIdentifierTypes;
       }),
-    [initialFormValues.identifiers, values.identifiers],
+    [initialFormValues.identifiers, values.identifiers, identifierTypeOverrides],
   );
 
   const handleSelectingIdentifierSource = (identifierType: PatientIdentifierType, sourceUuid) =>
