@@ -7,30 +7,34 @@ import {
   endVisit,
   generateRandomPatient,
   generateWardAdmissionRequest,
-  getProvider,
   startVisit,
   waitForAdmissionRequestToBeProcessed,
   waitForAdmissionToBeProcessed,
 } from '../commands';
 import { dischargePatientFromBed, generateBedType, generateRandomBed, retireBedType } from '../commands/bed-operations';
-import { type Bed, type BedType, type Patient, type Provider } from '../commands/types';
+import { type Bed, type BedType, type Patient } from '../commands/types';
 import { WardPage } from '../pages';
 
 let bed: Bed;
 let bedType: BedType;
-let provider: Provider;
 let visit: Visit;
 let wardPatient: Patient;
 
-test.beforeEach(async ({ api, page }) => {
+test.beforeEach(async ({ api, page, emrConfiguration }) => {
   await changeToWardLocation(api);
   bedType = await generateBedType(api);
   bed = await generateRandomBed(api, bedType);
-  provider = await getProvider(api);
   wardPatient = await generateRandomPatient(api, process.env.E2E_WARD_LOCATION_UUID);
   visit = await startVisit(api, wardPatient?.uuid, process.env.E2E_WARD_LOCATION_UUID);
-  await generateWardAdmissionRequest(api, provider.uuid, wardPatient?.uuid);
+  await generateWardAdmissionRequest(api, emrConfiguration, wardPatient?.uuid);
   await waitForAdmissionRequestToBeProcessed(api, page, wardPatient.uuid, process.env.E2E_WARD_LOCATION_UUID as string);
+});
+
+test.afterEach(async ({ api }) => {
+  await dischargePatientFromBed(api, bed.id, wardPatient.uuid);
+  await retireBedType(api, bedType.uuid, 'Retired during automated testing');
+  await deletePatient(api, wardPatient.uuid);
+  await endVisit(api, visit.uuid, true);
 });
 
 test('Add a patient note to an inpatient admission', async ({ page, api }) => {
@@ -134,11 +138,4 @@ test('Add a patient note to an inpatient admission', async ({ page, api }) => {
     await expect(page.getByRole('dialog').getByText('Sample patient note - edited')).toBeVisible();
     await expect(page.getByText('Sample patient note', { exact: true })).toBeVisible();
   });
-});
-
-test.afterEach(async ({ api }) => {
-  await dischargePatientFromBed(api, bed.id, wardPatient.uuid);
-  await retireBedType(api, bedType.uuid, 'Retired during automated testing');
-  await deletePatient(api, wardPatient.uuid);
-  await endVisit(api, visit.uuid, true);
 });
