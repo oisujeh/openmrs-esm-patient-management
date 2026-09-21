@@ -68,5 +68,10 @@
     "*.{ts,tsx}": "eslint --cache --fix --max-warnings 0",
     "*.{css,scss,ts,tsx}": "prettier --cache --write --list-different"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "resolutions": {
+    "openmrs": "10.0.1-pre.5147",
+    "@openmrs/esm-framework": "10.0.1-pre.5147",
+    "@openmrs/rspack-config": "10.0.1-pre.5147"
+  }
 }
