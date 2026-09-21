@@ -1,0 +1,5 @@
+# Check out text files with LF line endings on every platform, matching
+# .editorconfig (end_of_line = lf) and the output of Prettier and i18next-parser.
+# Without this, core.autocrlf=true on Windows checks files out as CRLF and the
+# tooling's LF rewrites show up as spurious modifications.
+* text=auto eol=lf
