@@ -1,0 +1,14 @@
+{
+  "@openmrs/esm-patient-registration-app": {
+    "defaultPatientIdentifierTypes": [
+      "fd0df06c-fcd4-4625-89b2-6b72ca44b8ed"
+    ],
+    "identifierTypeOverrides": [
+      {
+        "identifierTypeUuid": "fd0df06c-fcd4-4625-89b2-6b72ca44b8ed",
+        "required": false
+      }
+    ]
+  }
+}
+
