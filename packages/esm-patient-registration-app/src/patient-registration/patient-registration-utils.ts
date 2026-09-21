@@ -19,6 +19,24 @@ export function cancelRegistration() {
   window.history.back();
 }
 
+/**
+ * Maps a stored gender (e.g. FHIR's 'male' or the REST API's 'M') to the value of the matching
+ * configured sex option, so that the option gets selected even if the configured values differ
+ * in case or form (e.g. 'M' or 'Male'). Returns the gender unchanged if no option matches.
+ */
+export function getGenderOptionValue(gender: string | undefined, genderOptions: Array<{ value: string }> = []) {
+  if (!gender) {
+    return gender;
+  }
+
+  const genderKey = (value: string) => value?.trim().charAt(0).toLowerCase();
+  const matchingOption =
+    genderOptions.find((option) => option.value === gender) ??
+    genderOptions.find((option) => genderKey(option.value) === genderKey(gender));
+
+  return matchingOption?.value ?? gender;
+}
+
 export function getFormValuesFromFhirPatient(patient: fhir.Patient) {
   const result = {} as FormValues;
   const patientName = patient.name[0];

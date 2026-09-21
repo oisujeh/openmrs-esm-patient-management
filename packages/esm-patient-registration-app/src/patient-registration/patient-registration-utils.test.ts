@@ -1,4 +1,4 @@
-import { filterOutUndefinedPatientIdentifiers } from './patient-registration-utils';
+import { filterOutUndefinedPatientIdentifiers, getGenderOptionValue } from './patient-registration-utils';
 import { vi, describe, it, expect } from 'vitest';
 
 describe('filterOutUndefinedPatientIdentifiers', () => {
@@ -30,5 +30,22 @@ describe('filterOutUndefinedPatientIdentifiers', () => {
   it('should retain auto-generated identifiers with manual entry', () => {
     const filteredIdentifiers = filterOutUndefinedPatientIdentifiers(getIdentifiers(true, true));
     expect(filteredIdentifiers.OpenMRSId).toBeDefined();
+  });
+});
+
+describe('getGenderOptionValue', () => {
+  it('returns the stored gender when it matches a configured option', () => {
+    expect(getGenderOptionValue('male', [{ value: 'male' }, { value: 'female' }])).toBe('male');
+  });
+
+  it('maps the stored gender to a configured option that differs in case or form', () => {
+    expect(getGenderOptionValue('female', [{ value: 'Male' }, { value: 'Female' }])).toBe('Female');
+    expect(getGenderOptionValue('male', [{ value: 'M' }, { value: 'F' }])).toBe('M');
+    expect(getGenderOptionValue('F', [{ value: 'male' }, { value: 'female' }])).toBe('female');
+  });
+
+  it('returns the stored gender unchanged when no option matches', () => {
+    expect(getGenderOptionValue('unknown', [{ value: 'male' }, { value: 'female' }])).toBe('unknown');
+    expect(getGenderOptionValue(undefined, [{ value: 'male' }])).toBeUndefined();
   });
 });

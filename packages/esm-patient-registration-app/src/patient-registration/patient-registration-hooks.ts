@@ -26,6 +26,7 @@ import {
 import {
   getAddressFieldValuesFromFhirPatient,
   getFormValuesFromFhirPatient,
+  getGenderOptionValue,
   getPatientUuidMapFromFhirPatient,
   getPhonePersonAttributeValueFromFhirPatient,
   latestFirstEncounter,
@@ -37,6 +38,7 @@ interface DeathInfoResults {
   dead: boolean;
   deathDate: string;
   display: string;
+  gender: string | null;
   uuid: string;
 }
 
@@ -45,7 +47,8 @@ export function useInitialFormValues(
   patientToEdit: fhir.Patient,
   patientUuid: string,
 ): [FormValues, Dispatch<FormValues>] {
-  const { freeTextFieldConceptUuid } = useConfig<RegistrationConfig>();
+  const { freeTextFieldConceptUuid, fieldConfigurations } = useConfig<RegistrationConfig>();
+  const genderOptions = fieldConfigurations?.gender;
   const { data: deathInfo, isLoading: isLoadingDeathInfo } = useInitialPersonDeathInfo(patientUuid);
   const { data: attributes, isLoading: isLoadingAttributes } = useInitialPersonAttributes(patientUuid);
   const { data: identifiers, isLoading: isLoadingIdentifiers } = useInitialPatientIdentifiers(patientUuid);
@@ -93,6 +96,7 @@ export function useInitialFormValues(
           ...getFormValuesFromFhirPatient(patientToEdit),
           address: getAddressFieldValuesFromFhirPatient(patientToEdit),
           ...getPhonePersonAttributeValueFromFhirPatient(patientToEdit),
+          gender: getGenderOptionValue(patientToEdit.gender, genderOptions),
           birthdateEstimated: !/^\d{4}-\d{2}-\d{2}$/.test(patientToEdit.birthDate),
           yearsEstimated,
           monthsEstimated,
@@ -110,7 +114,17 @@ export function useInitialFormValues(
         setInitialFormValues(registration._patientRegistrationData.formValues);
       }
     })();
-  }, [isLoadingPatientToEdit, patientToEdit, patientUuid]);
+  }, [isLoadingPatientToEdit, patientToEdit, patientUuid, genderOptions]);
+
+  // Fall back to the person's stored gender if the FHIR patient doesn't carry one
+  useEffect(() => {
+    if (patientToEdit && !patientToEdit.gender && deathInfo?.gender) {
+      setInitialFormValues((initialFormValues) => ({
+        ...initialFormValues,
+        gender: getGenderOptionValue(deathInfo.gender, genderOptions),
+      }));
+    }
+  }, [patientToEdit, deathInfo?.gender, genderOptions]);
 
   // Set initial patient death info
   useEffect(() => {
@@ -345,7 +359,7 @@ function useInitialPersonAttributes(personUuid: string) {
 function useInitialPersonDeathInfo(personUuid: string) {
   const { data, error, isLoading } = useSWR<FetchResponse<DeathInfoResults>, Error>(
     !!personUuid
-      ? `${restBaseUrl}/person/${personUuid}?v=custom:(uuid,display,causeOfDeath,dead,deathDate,causeOfDeathNonCoded)`
+      ? `${restBaseUrl}/person/${personUuid}?v=custom:(uuid,display,gender,causeOfDeath,dead,deathDate,causeOfDeathNonCoded)`
       : null,
     openmrsFetch,
   );

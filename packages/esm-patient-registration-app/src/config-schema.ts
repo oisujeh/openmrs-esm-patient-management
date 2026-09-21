@@ -84,6 +84,7 @@ export interface RegistrationConfig {
   identifierTypeOverrides: Array<{
     identifierTypeUuid: string;
     required?: boolean;
+    readOnly?: boolean;
   }>;
   registrationObs: {
     encounterTypeUuid: string | null;
@@ -413,7 +414,7 @@ export const esmPatientRegistrationSchema = {
     _type: Type.Array,
     _default: [],
     _description:
-      'Allows overriding the required/optional status of specific identifier types. Use this to make backend-required identifiers optional in the frontend.',
+      'Allows overriding the behaviour of specific identifier types. Use this to make backend-required identifiers optional in the frontend, or to prevent saved identifiers from being edited or deleted.',
     _elements: {
       identifierTypeUuid: {
         _type: Type.UUID,
@@ -424,6 +425,12 @@ export const esmPatientRegistrationSchema = {
         _default: false,
         _description:
           'Whether this identifier should be required. Set to false to make a backend-required identifier optional in the frontend.',
+      },
+      readOnly: {
+        _type: Type.Boolean,
+        _default: false,
+        _description:
+          'Whether a saved identifier of this type is read-only. If true, the edit and delete buttons are not shown for the identifier once it has a saved value. The identifier can still be entered when it has no saved value yet.',
       },
     },
   },

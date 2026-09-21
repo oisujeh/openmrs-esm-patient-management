@@ -20,7 +20,7 @@ interface IdentifierInputProps {
 
 const IdentifierInput: React.FC<IdentifierInputProps> = ({ patientIdentifier, fieldName }) => {
   const { t } = useTranslation();
-  const { defaultPatientIdentifierTypes } = useConfig<RegistrationConfig>();
+  const { defaultPatientIdentifierTypes, identifierTypeOverrides } = useConfig<RegistrationConfig>();
   const { identifierTypes } = useResourcesContext();
   const { isOffline, values, setFieldValue } = usePatientRegistrationContext();
   const identifierType = useMemo(
@@ -34,6 +34,12 @@ const IdentifierInput: React.FC<IdentifierInputProps> = ({ patientIdentifier, fi
   const [identifierField, identifierFieldMeta] = useField(name);
 
   const disabled = isOffline && shouldBlockPatientIdentifierInOfflineMode(identifierType);
+
+  // A saved identifier of a type configured as read-only can neither be edited nor deleted
+  const isReadOnly =
+    !!initialValue &&
+    !!identifierTypeOverrides?.find((override) => override.identifierTypeUuid === patientIdentifier.identifierTypeUuid)
+      ?.readOnly;
 
   const defaultPatientIdentifierTypesMap = useMemo(() => {
     const map = {};
@@ -109,9 +115,13 @@ const IdentifierInput: React.FC<IdentifierInputProps> = ({ patientIdentifier, fi
     }
   };
 
-  const showEditButton = !required && hideInputField && (!!initialValue || manualEntryEnabled);
+  const showEditButton = !isReadOnly && !required && hideInputField && (!!initialValue || manualEntryEnabled);
   const showResetButton =
-    (!!initialValue && initialValue !== identifierValue) || (!hideInputField && manualEntryEnabled);
+    !isReadOnly && ((!!initialValue && initialValue !== identifierValue) || (!hideInputField && manualEntryEnabled));
+  const showDeleteButton =
+    !isReadOnly &&
+    !patientIdentifier.required &&
+    !defaultPatientIdentifierTypesMap[patientIdentifier.identifierTypeUuid];
   return (
     <div className={styles.IDInput}>
       {!hideInputField ? (
@@ -172,7 +182,7 @@ const IdentifierInput: React.FC<IdentifierInputProps> = ({ patientIdentifier, fi
             </Button>
           </UserHasAccess>
         )}
-        {!patientIdentifier.required && !defaultPatientIdentifierTypesMap[patientIdentifier.identifierTypeUuid] && (
+        {showDeleteButton && (
           <UserHasAccess privilege="Delete Patient Identifiers">
             <Button
               size="md"

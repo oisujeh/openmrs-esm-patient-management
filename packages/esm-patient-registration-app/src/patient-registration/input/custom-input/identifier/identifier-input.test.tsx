@@ -187,6 +187,37 @@ describe('IdentifierInput component', () => {
       });
       expect(screen.getByText('Delete')).toBeInTheDocument();
     });
+
+    it('hides the edit and delete buttons for a saved identifier of a read-only type', () => {
+      mockUseConfig.mockReturnValue({
+        ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+        identifierTypeOverrides: [
+          { identifierTypeUuid: openmrsID.identifierTypeUuid, required: false, readOnly: true },
+        ],
+      });
+      renderIdentifierInput({
+        ...openmrsID,
+        autoGeneration: false,
+        required: false,
+        initialValue: '1002UU9',
+        identifierValue: '1002UU9',
+      });
+      expect(screen.getByText('1002UU9')).toBeInTheDocument();
+      expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+    });
+
+    it('still allows entering an identifier of a read-only type that has no saved value', () => {
+      mockUseConfig.mockReturnValue({
+        ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+        identifierTypeOverrides: [
+          { identifierTypeUuid: openmrsID.identifierTypeUuid, required: false, readOnly: true },
+        ],
+      });
+      renderIdentifierInput({ ...openmrsID, autoGeneration: false, required: false });
+      expect(screen.getByLabelText(new RegExp(openmrsID.identifierName))).toBeInTheDocument();
+      expect(screen.getByText('Delete')).toBeInTheDocument();
+    });
   });
 
   describe('Auto-generated identifier', () => {
